@@ -38,6 +38,15 @@ public class MyRealm extends AuthorizingRealm {
     }
 
     /**
+     * 清除指定用户的授权缓存。
+     * 角色/权限变更后调用，确保旧 token 下次鉴权时读到最新数据。
+     * 当前架构无 CacheManager 时为 no-op，但保留调用保证一致性。
+     */
+    public void clearAuthorizationCache() {
+        clearCachedAuthorizationInfo(null);
+    }
+
+    /**
      * 只有当需要检测用户权限的时候才会调用此方法，例如checkRole,checkPermission之类的
      */
     @Override

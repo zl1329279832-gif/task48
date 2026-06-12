@@ -17,6 +17,14 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
     private Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
     /**
+     * Request attribute key set when the Authorization header was present
+     * but token verification failed.  Downstream code (e.g. a Spring
+     * HandlerInterceptor) can check this to reject the request explicitly
+     * instead of silently falling through to guest logic.
+     */
+    public static final String AUTH_FAILED_ATTR = JWTFilter.class.getName() + ".AUTH_FAILED";
+
+    /**
      * 判断用户是否想要登入。
      * 检测header里面是否包含Authorization字段即可
      */
@@ -57,9 +65,11 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
             try {
                 executeLogin(request, response);
             } catch (Exception e) {
-                // 不提交响应（不 redirect），让 Controller 层通过
-                // subject.isAuthenticated() 判断是否已登录，
-                // 受保护端点由 Shiro 注解抛出异常、ExceptionController 返回 401/403
+                // 标记认证失败：Authorization 头存在但 token 无效。
+                // 下游拦截器可据此对受保护端点直接返回 401，
+                // 而非静默降级为 guest。
+                request.setAttribute(AUTH_FAILED_ATTR, Boolean.TRUE);
+                LOGGER.debug("JWT authentication failed: {}", e.getMessage());
             }
         }
         return true;
