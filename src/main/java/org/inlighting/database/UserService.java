@@ -21,4 +21,26 @@ public class UserService {
         user.setPermission(detail.get("permission"));
         return user;
     }
+
+    /**
+     * 更新用户角色
+     */
+    public boolean updateRole(String username, String role) {
+        if (!DataSource.getData().containsKey(username)) {
+            return false;
+        }
+        DataSource.getData().get(username).put("role", role);
+        return true;
+    }
+
+    /**
+     * 更新用户权限
+     */
+    public boolean updatePermission(String username, String permission) {
+        if (!DataSource.getData().containsKey(username)) {
+            return false;
+        }
+        DataSource.getData().get(username).put("permission", permission);
+        return true;
+    }
 }
