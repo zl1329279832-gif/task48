@@ -1,11 +1,22 @@
 package org.inlighting.database;
 
+import org.inlighting.shiro.MyRealm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
 public class UserService {
+
+    private MyRealm myRealm;
+
+    @Autowired
+    @Lazy
+    public void setMyRealm(MyRealm myRealm) {
+        this.myRealm = myRealm;
+    }
 
     public UserBean getUser(String username) {
         // 没有此用户直接返回null
@@ -30,6 +41,7 @@ public class UserService {
             return false;
         }
         DataSource.getData().get(username).put("role", role);
+        myRealm.clearAllCachedAuthorizationInfo();
         return true;
     }
 
@@ -41,6 +53,7 @@ public class UserService {
             return false;
         }
         DataSource.getData().get(username).put("permission", permission);
+        myRealm.clearAllCachedAuthorizationInfo();
         return true;
     }
 }

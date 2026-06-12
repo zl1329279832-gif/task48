@@ -57,9 +57,7 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
             try {
                 executeLogin(request, response);
             } catch (Exception e) {
-                // 不提交响应（不 redirect），让 Controller 层通过
-                // subject.isAuthenticated() 判断是否已登录，
-                // 受保护端点由 Shiro 注解抛出异常、ExceptionController 返回 401/403
+                LOGGER.info("JWT authentication failed: {}", e.getMessage());
             }
         }
         return true;

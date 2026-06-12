@@ -5,6 +5,8 @@ import org.apache.log4j.Logger;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
+import org.apache.shiro.authz.UnauthenticatedException;
+import org.apache.shiro.cache.Cache;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.inlighting.database.UserService;
@@ -21,6 +23,12 @@ import java.util.Set;
 public class MyRealm extends AuthorizingRealm {
 
     private static final Logger LOGGER = LogManager.getLogger(MyRealm.class);
+
+    public MyRealm() {
+        // 禁用授权和认证缓存，确保角色/权限变更后立即生效
+        setAuthorizationCachingEnabled(false);
+        setAuthenticationCachingEnabled(false);
+    }
 
     private UserService userService;
 
@@ -42,13 +50,41 @@ public class MyRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        String username = JWTUtil.getUsername(principals.toString());
+        if (principals == null) {
+            throw new UnauthenticatedException("principals is null - user not authenticated");
+        }
+
+        String token = principals.toString();
+        String username = JWTUtil.getUsername(token);
+        if (username == null) {
+            throw new UnauthenticatedException("invalid token - cannot extract username");
+        }
+
         UserBean user = userService.getUser(username);
+        if (user == null) {
+            throw new UnauthenticatedException("user not found: " + username);
+        }
+
+        // 重新验证 token，确保密码变更后旧 token 的授权也会失败
+        if (!JWTUtil.verify(token, username, user.getPassword())) {
+            throw new UnauthenticatedException("token is no longer valid");
+        }
+
         SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
         simpleAuthorizationInfo.addRole(user.getRole());
         Set<String> permission = new HashSet<>(Arrays.asList(user.getPermission().split(",")));
         simpleAuthorizationInfo.addStringPermissions(permission);
         return simpleAuthorizationInfo;
+    }
+
+    /**
+     * 清除所有缓存的授权信息，在角色/权限变更后调用
+     */
+    public void clearAllCachedAuthorizationInfo() {
+        Cache<Object, AuthorizationInfo> cache = getAuthorizationCache();
+        if (cache != null) {
+            cache.clear();
+        }
     }
 
     /**

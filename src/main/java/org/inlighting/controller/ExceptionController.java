@@ -1,11 +1,13 @@
 package org.inlighting.controller;
 
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.ShiroException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.UnauthenticatedException;
 import org.apache.shiro.authz.UnauthorizedException;
 import org.inlighting.bean.ResponseBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -20,11 +22,16 @@ public class ExceptionController {
         return new ResponseBean(401, e.getMessage(), null);
     }
 
-    // 捕捉 Shiro 授权异常（权限/角色不足）→ 403
-    @ResponseStatus(HttpStatus.FORBIDDEN)
+    // 捕捉 Shiro 授权异常（权限/角色不足）
+    // 如果 subject 未认证，返回 401；已认证但权限不足，返回 403
     @ExceptionHandler({AuthorizationException.class, UnauthorizedException.class})
-    public ResponseBean handle403(ShiroException e) {
-        return new ResponseBean(403, e.getMessage(), null);
+    public ResponseEntity<ResponseBean> handle403(ShiroException e) {
+        if (!SecurityUtils.getSubject().isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ResponseBean(401, "Unauthorized", null));
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ResponseBean(403, e.getMessage(), null));
     }
 
     // 捕捉其他 Shiro 异常（认证失败等）→ 401
