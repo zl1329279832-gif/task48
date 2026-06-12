@@ -24,4 +24,29 @@ public class DataSource {
     public static Map<String, Map<String, String>> getData() {
         return data;
     }
+
+    public static void updateUserRole(String username, String role) {
+        data.get(username).put("role", role);
+    }
+
+    public static void updateUserPermission(String username, String permission) {
+        data.get(username).put("permission", permission);
+    }
+
+    public static void resetData() {
+        data.clear();
+
+        Map<String, String> data1 = new HashMap<>();
+        data1.put("password", "smith123");
+        data1.put("role", "user");
+        data1.put("permission", "view");
+
+        Map<String, String> data2 = new HashMap<>();
+        data2.put("password", "danny123");
+        data2.put("role", "admin");
+        data2.put("permission", "view,edit");
+
+        data.put("smith", data1);
+        data.put("danny", data2);
+    }
 }

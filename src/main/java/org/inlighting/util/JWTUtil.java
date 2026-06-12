@@ -47,6 +47,18 @@ public class JWTUtil {
     }
 
     /**
+     * 获得token的过期时间
+     */
+    public static Date getExpiresAt(String token) {
+        try {
+            DecodedJWT jwt = JWT.decode(token);
+            return jwt.getExpiresAt();
+        } catch (JWTDecodeException e) {
+            return null;
+        }
+    }
+
+    /**
      * 生成签名,5min后过期
      * @param username 用户名
      * @param secret 用户的密码

@@ -1,6 +1,8 @@
 package org.inlighting.controller;
 
 import org.apache.shiro.ShiroException;
+import org.apache.shiro.authz.AuthorizationException;
+import org.apache.shiro.authz.UnauthenticatedException;
 import org.inlighting.bean.ResponseBean;
 import org.inlighting.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
@@ -11,17 +13,31 @@ import javax.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class ExceptionController {
 
-    // 捕捉shiro的异常
+    // 捕捉未认证异常 (未登录访问需要认证的资源)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseBean handle401(UnauthenticatedException e) {
+        return new ResponseBean(401, e.getMessage() != null ? e.getMessage() : "Unauthorized", null);
+    }
+
+    // 捕捉授权异常 (已登录但缺少角色或权限)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(AuthorizationException.class)
+    public ResponseBean handle403(AuthorizationException e) {
+        return new ResponseBean(403, e.getMessage(), null);
+    }
+
+    // 捕捉其他shiro异常 (如认证失败)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(ShiroException.class)
     public ResponseBean handle401(ShiroException e) {
         return new ResponseBean(401, e.getMessage(), null);
     }
 
-    // 捕捉UnauthorizedException
+    // 捕捉自定义UnauthorizedException
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseBean handle401() {
+    public ResponseBean handleCustom401() {
         return new ResponseBean(401, "Unauthorized", null);
     }
 

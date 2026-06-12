@@ -21,4 +21,12 @@ public class UserService {
         user.setPermission(detail.get("permission"));
         return user;
     }
+
+    public void updateRole(String username, String role) {
+        DataSource.updateUserRole(username, role);
+    }
+
+    public void updatePermission(String username, String permission) {
+        DataSource.updateUserPermission(username, permission);
+    }
 }
